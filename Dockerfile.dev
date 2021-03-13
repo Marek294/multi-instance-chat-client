@@ -1,0 +1,14 @@
+FROM node:14.16.0-alpine
+ 
+WORKDIR /client/app
+ 
+COPY package.json /client/app/package.json
+COPY package-lock.json /client/app/package-lock.json
+
+RUN npm install
+ 
+COPY . /client/app
+ 
+EXPOSE 3000
+ 
+CMD [ "npm", "start" ]
