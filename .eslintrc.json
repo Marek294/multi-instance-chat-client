@@ -14,6 +14,7 @@
     "object-curly-spacing": [2, "always"],
     "curly": [1, "multi-line", "consistent"],
     "no-multi-spaces": [1, { "exceptions": { "ImportDeclaration": true, "VariableDeclarator": true } }],
-    "react/prop-types": 0
+    "react/prop-types": 0,
+    "indent": ["error", 2]
   }
 }
