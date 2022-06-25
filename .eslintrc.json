@@ -1,3 +1,19 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": ["next/core-web-vitals", "standard"],
+  "rules": {
+    "key-spacing": 0,
+    "prefer-const": 1,
+    "max-len": ["error", { "code": 120, "ignoreComments": true, "ignoreTemplateLiterals": true }],
+    "no-var": 1,
+    "no-undef": 2,
+    "no-tabs": 0,
+    "semi": [2, "never"],
+    "object-shorthand": [1, "always"],
+    "arrow-spacing": ["error", { "before": true, "after": true }],
+    "jsx-quotes": [2, "prefer-double"],
+    "object-curly-spacing": [2, "always"],
+    "curly": [1, "multi-line", "consistent"],
+    "no-multi-spaces": [1, { "exceptions": { "ImportDeclaration": true, "VariableDeclarator": true } }],
+    "react/prop-types": 0
+  }
 }
