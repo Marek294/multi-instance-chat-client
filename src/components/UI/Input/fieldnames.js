@@ -1,6 +1,9 @@
 const fieldnames = {
   enterChat: {
     username: 'username'
+  },
+  chat: {
+    message: 'message'
   }
 }
 

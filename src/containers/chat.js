@@ -1,22 +1,31 @@
+import React, { useState } from 'react'
 import { useRouter } from 'next/router'
-import EnterChatForm from '../components/Forms/EnterChatForm'
+import ChatForm from '../components/Forms/ChatForm'
+import ChatMessages from '../components/ChatMessages'
 
-export default function IndexContainer () {
+export default function ChatContainer () {
   const router = useRouter()
+  const [messages, setMessages] = useState([])
 
-  const onSubmit = values => {
-    return router.push(`/chat?username=${values.username}`)
+  let { username } = router.query
+  if (username) username = username.toLowerCase()
+
+  const sendMessage = ({ message }, { resetForm }) => {
+    const newMessages = [...messages]
+    newMessages.push(message)
+    setMessages(newMessages)
+    resetForm()
   }
 
   return (
     <div className="container">
       <h1 className="title">
-          Welcome to<br /><span>Multi Instance Chat</span>
+          Hello <span>{username}</span>
       </h1>
 
-      <div className="form">
-        <EnterChatForm onSubmit={onSubmit} initialValues={{ username: '' }} />
-      </div>
+      <ChatMessages messages={messages} />
+      <ChatForm onSubmit={sendMessage} initialValues={{ message: '' }} />
+
       <style jsx>{`
         .container {
           padding: 0 2rem;
