@@ -8,7 +8,8 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   publicRuntimeConfig: {
-    appServerUrl: process.env.APP_SERVER_URL
+    serverHost: process.env.SERVER_HOST,
+    serverSecure: process.env.SERVER_SECURE === 'true'
   }
 }
 
