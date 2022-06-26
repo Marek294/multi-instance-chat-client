@@ -17,7 +17,11 @@ export default function ChatContainer () {
     setMessages(newMessages)
     resetForm()
 
-    websocket.send('SEND_MESSAGE', { message })
+    websocket.send('SEND_MESSAGE', { message }, {
+      onSuccess: data => console.log('success', data),
+      onError: data => console.log('error', data),
+      onProgress: data => console.log('progress', data)
+    })
   }
 
   useEffect(() => {
