@@ -4,7 +4,7 @@ import '../styles/main.scss'
 
 function MyApp ({ Component, pageProps }) {
   useEffect(() => {
-    websocket.connect()
+    websocket.open()
     return () => {
       websocket.close()
     }

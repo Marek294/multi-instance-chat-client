@@ -19,82 +19,101 @@ const guid = () => {
 }
 
 // TODO: heartbeat
-// TODO: reconnection
 // TODO: volatile - client buffer events while reconnecting
 
-const websocket = {
-  connect: () => {
-    socket = new WebSocket(protocol + serverHost)
+const open = () => {
+  socket = new WebSocket(protocol + serverHost)
 
-    socket.onmessage = event => {
-      const { requestId, type, payload } = JSON.parse(event.data)
+  socket.onmessage = event => {
+    const { requestId, type, payload } = JSON.parse(event.data)
 
-      // Send message to subscribers if exists
-      const subscriber = subscribers[type]
-      if (subscriber) {
-        subscriber.forEach(fn => {
-          fn(payload)
-        })
-      }
-
-      // Send callback if there is requestId
-      if (requestId && callbacks[requestId]) {
-        const { onSuccess, onError, onProgress, timeoutTimer } = callbacks[requestId]
-        if (type === 'request-success') {
-          if (onSuccess) onSuccess(payload)
-          if (timeoutTimer) clearTimeout(timeoutTimer)
-          delete callbacks[requestId]
-        }
-        if (type === 'request-error') {
-          if (onError) onError(payload)
-          if (timeoutTimer) clearTimeout(timeoutTimer)
-          delete callbacks[requestId]
-        }
-        if (type === 'request-progress') {
-          if (onProgress) onProgress(payload)
-        }
-      }
+    // Send message to subscribers if exists
+    const subscriber = subscribers[type]
+    if (subscriber) {
+      subscriber.forEach(fn => {
+        fn(payload)
+      })
     }
-  },
-  close: () => {
-    if (socket) {
-      socket.close()
-      socket = undefined
-    }
-  },
-  send: (type, payload, { onSuccess, onError, onProgress, timeout = 30e3 } = {}) => {
-    let requestId
-    if (!socket) return
 
-    if (onSuccess || onError || onProgress) {
-      requestId = guid()
+    // Send callback if there is requestId
+    if (requestId && callbacks[requestId]) {
+      const { onSuccess, onError, onProgress, timeoutTimer } = callbacks[requestId]
 
-      const timeoutTimer = setTimeout(() => {
-        if (onError) onError(new Error('Request timeout'))
+      if (type === 'request-success') {
+        if (onSuccess) onSuccess(payload)
+        if (timeoutTimer) clearTimeout(timeoutTimer)
         delete callbacks[requestId]
-      }, timeout)
-
-      callbacks[requestId] = {
-        onSuccess,
-        onError,
-        onProgress,
-        timeoutTimer
       }
-    }
-
-    socket.send(JSON.stringify({ requestId, type, payload }))
-  },
-  subscribe: (type, fn) => {
-    if (!subscribers[type]) {
-      subscribers[type] = []
-    }
-
-    subscribers[type].push(fn)
-
-    return () => {
-      subscribers[type] = subscribers[type].filter(subFn => fn !== subFn)
+      if (type === 'request-error') {
+        if (onError) onError(payload)
+        if (timeoutTimer) clearTimeout(timeoutTimer)
+        delete callbacks[requestId]
+      }
+      if (type === 'request-progress') {
+        if (onProgress) onProgress(payload)
+      }
     }
   }
+
+  socket.onclose = function (e) {
+    console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason)
+    // Reconnect
+    setTimeout(open, 1000)
+  }
+
+  socket.onerror = function (err) {
+    console.error('Socket encountered error: ', err.message, 'Closing socket')
+    close()
+  }
+}
+
+const close = () => {
+  if (!socket) return
+
+  socket.close()
+  socket = undefined
+}
+
+const send = (type, payload, { onSuccess, onError, onProgress, timeout = 30e3 } = {}) => {
+  let requestId
+  if (!socket) return
+
+  if (onSuccess || onError || onProgress) {
+    requestId = guid()
+
+    const timeoutTimer = setTimeout(() => {
+      if (onError) onError(new Error('Request timeout'))
+      delete callbacks[requestId]
+    }, timeout)
+
+    callbacks[requestId] = {
+      onSuccess,
+      onError,
+      onProgress,
+      timeoutTimer
+    }
+  }
+
+  socket.send(JSON.stringify({ requestId, type, payload }))
+}
+
+const subscribe = (type, fn) => {
+  if (!subscribers[type]) {
+    subscribers[type] = []
+  }
+
+  subscribers[type].push(fn)
+
+  return () => {
+    subscribers[type] = subscribers[type].filter(subFn => fn !== subFn)
+  }
+}
+
+const websocket = {
+  open,
+  close,
+  send,
+  subscribe
 }
 
 export default websocket
