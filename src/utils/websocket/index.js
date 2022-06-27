@@ -19,44 +19,55 @@ const guid = () => {
 }
 
 // TODO: heartbeat
+// The WebSocket protocol defines Ping and Pong frames that can be used for keep-alive, heart-beats, network status probing, latency instrumentation, and so forth. These are not currently exposed in the API.
+// QUESTION: Should client detect broken connections too?
+
 // TODO: volatile - client buffer events while reconnecting
 
 const open = () => {
+  if (socket) return
+
   socket = new WebSocket(protocol + serverHost)
 
   socket.onmessage = event => {
-    const { requestId, type, payload } = JSON.parse(event.data)
+    try {
+      const { requestId, type, payload } = JSON.parse(event.data)
 
-    // Send message to subscribers if exists
-    const subscriber = subscribers[type]
-    if (subscriber) {
-      subscriber.forEach(fn => {
-        fn(payload)
-      })
-    }
+      // Send message to subscribers if exists
+      const subscriber = subscribers[type]
+      if (subscriber) {
+        subscriber.forEach(fn => {
+          fn(payload)
+        })
+      }
 
-    // Send callback if there is requestId
-    if (requestId && callbacks[requestId]) {
-      const { onSuccess, onError, onProgress, timeoutTimer } = callbacks[requestId]
+      // Send callback if there is requestId
+      if (requestId && callbacks[requestId]) {
+        const { onSuccess, onError, onProgress, timeoutTimer } = callbacks[requestId]
 
-      if (type === 'request-success') {
-        if (onSuccess) onSuccess(payload)
-        if (timeoutTimer) clearTimeout(timeoutTimer)
-        delete callbacks[requestId]
+        if (type === 'request-success') {
+          if (onSuccess) onSuccess(payload)
+          if (timeoutTimer) clearTimeout(timeoutTimer)
+          delete callbacks[requestId]
+        }
+        if (type === 'request-error') {
+          if (onError) onError(payload)
+          if (timeoutTimer) clearTimeout(timeoutTimer)
+          delete callbacks[requestId]
+        }
+        if (type === 'request-progress') {
+          if (onProgress) onProgress(payload)
+        }
       }
-      if (type === 'request-error') {
-        if (onError) onError(payload)
-        if (timeoutTimer) clearTimeout(timeoutTimer)
-        delete callbacks[requestId]
-      }
-      if (type === 'request-progress') {
-        if (onProgress) onProgress(payload)
-      }
+    } catch (e) {
+      console.error(e)
     }
   }
 
   socket.onclose = function (e) {
     console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason)
+    socket = undefined
+
     // Reconnect
     setTimeout(open, 1000)
   }
@@ -69,9 +80,7 @@ const open = () => {
 
 const close = () => {
   if (!socket) return
-
   socket.close()
-  socket = undefined
 }
 
 const send = (type, payload, { onSuccess, onError, onProgress, timeout = 30e3 } = {}) => {
