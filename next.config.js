@@ -8,6 +8,7 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   publicRuntimeConfig: {
+    dev: process.env.NODE_ENV !== 'production',
     serverHost: process.env.SERVER_HOST,
     serverSecure: process.env.SERVER_SECURE === 'true'
   }

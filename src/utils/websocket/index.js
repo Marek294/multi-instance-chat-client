@@ -1,7 +1,7 @@
 import getConfig from 'next/config'
 
 const { publicRuntimeConfig } = getConfig()
-const { serverHost, serverSecure } = publicRuntimeConfig
+const { serverHost, serverSecure, dev } = publicRuntimeConfig
 
 const protocol = serverSecure ? 'wss://' : 'ws://'
 let socket
@@ -64,8 +64,12 @@ const open = () => {
     }
   }
 
+  socket.onopen = function (e) {
+    if (dev) console.log('Socket is opened.')
+  }
+
   socket.onclose = function (e) {
-    console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason)
+    if (dev) console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason)
     socket = undefined
 
     // Reconnect
@@ -73,7 +77,7 @@ const open = () => {
   }
 
   socket.onerror = function (err) {
-    console.error('Socket encountered error: ', err.message, 'Closing socket')
+    if (dev) console.error('Socket encountered error: ', err.message, 'Closing socket')
     close()
   }
 }
